@@ -1,6 +1,4 @@
 ﻿using Autodesk.Connectivity.Explorer.Extensibility;
-using Autodesk.Connectivity.Extensibility.Framework;
-using IsolatedVaultAddin.Isolation;
 #if NETCOREAPP
 using System.Runtime.Loader;
 #endif
@@ -10,17 +8,17 @@ namespace IsolatedVaultAddin;
 /// <remarks>
 ///	Assembly attributes (ApiVersion, ExtensionId) are generated via MSBuild in the .csproj file.
 /// </remarks>
-public class VaultExplorerExtension : IsolatedIExplorerExtension
+public class VaultExplorerExtension : IExplorerExtension
 {
-	public override void Startup() { }
+	public void OnStartup(IApplication application) { }
 
-	public override void LogOn() { }
+	public void OnLogOn(IApplication application) { }
 
-	public override void LogOff() { }
+	public void OnLogOff(IApplication application) { }
 
-	public override void Shutdown() { }
+	public void OnShutdown(IApplication application) { }
 
-	public override IEnumerable<CommandSite>? OnCommandSites()
+	public IEnumerable<CommandSite>? CommandSites()
 	{
 		CommandItem SerilogPackageVersionCommandItem = new("SerilogPackageVersionCommand", "Serilog Version") { };
 
@@ -39,15 +37,15 @@ public class VaultExplorerExtension : IsolatedIExplorerExtension
 		return commandSites;
 	}
 
-	public override IEnumerable<CustomEntityHandler>? OnCustomEntityHandlers() => null;
+	public IEnumerable<CustomEntityHandler>? CustomEntityHandlers() => null;
 
-	public override IEnumerable<DetailPaneTab>? OnDetailTabs() => null;
+	public IEnumerable<DetailPaneTab>? DetailTabs() => null;
 
 #if VAULT_HAS_DOCK_PANELS
-	public override IEnumerable<DockPanel>? OnDockPanels() => null;
+	public IEnumerable<DockPanel>? DockPanels() => null;
 #endif
 
-	public override IEnumerable<string>? OnHiddenCommands() => null;
+	public IEnumerable<string>? HiddenCommands() => null;
 
 	void SerilogPackageVersionCommandHandler(object? sender, CommandItemEventArgs eventArgs)
 	{
@@ -56,7 +54,10 @@ public class VaultExplorerExtension : IsolatedIExplorerExtension
 			IApplication vaultApplication = eventArgs.Context.Application;
 
 			string title = $"{vaultApplication.Title}.{vaultApplication.Version.Minor}";
-			string assemblyVersionInfo = GetAssemblyVersionInfo(nameof(Serilog), typeof(Serilog.Log));
+
+			AssemblyInspector inspector = new();
+			string assemblyVersionInfo = inspector.GetSerilogVersionInfo();
+
 			MessageBox.Show(assemblyVersionInfo, title);
 		}
 		catch (Exception ex)
@@ -64,21 +65,28 @@ public class VaultExplorerExtension : IsolatedIExplorerExtension
 			MessageBox.Show(ex.ToString());
 		}
 	}
+}
 
-	private static string GetAssemblyVersionInfo(string targetAssemblyName, Type targetAssemblyType)
+/// <summary>
+///	Isolated class that handles assembly inspection logic.
+///	This runs in a separate AssemblyLoadContext to demonstrate isolation.
+/// </summary>
+[Isolator]
+internal class AssemblyInspector
+{
+	public static string GetAssemblyVersionInfo(string targetAssemblyName, Type targetAssemblyType)
 	{
 		try
 		{
 			var stringBuilder = new System.Text.StringBuilder();
 
-			// Requesting add-in assembly.
-			var addinAssembly = typeof(CommandSite).Assembly;
+			var addinAssembly = typeof(AssemblyInspector).Assembly;
 #if NETCOREAPP
 			var addinAssemblyLoadContext = AssemblyLoadContext.GetLoadContext(addinAssembly);
 			var addinAssemblyLoadContextName = addinAssemblyLoadContext?.Name ?? "<default>";
 #else
-			var addinAppDomain = AppDomain.CurrentDomain;
-			var addinAppDomainName = addinAppDomain?.FriendlyName ?? "<default>";
+         var addinAppDomain = AppDomain.CurrentDomain;
+         var addinAppDomainName = addinAppDomain?.FriendlyName ?? "<default>";
 #endif
 
 			stringBuilder.AppendLine("****  Requesting Add-In Assembly  ****");
@@ -86,7 +94,7 @@ public class VaultExplorerExtension : IsolatedIExplorerExtension
 #if NETCOREAPP
 			AppendKeyValuePair(stringBuilder, "AssemblyLoadContext", addinAssemblyLoadContextName);
 #else
-			AppendKeyValuePair(stringBuilder, "AppDomain", addinAppDomainName);
+         AppendKeyValuePair(stringBuilder, "AppDomain", addinAppDomainName);
 #endif
 			AppendKeyValuePair(stringBuilder, "Version", addinAssembly.GetName().Version?.ToString());
 			AppendKeyValuePair(stringBuilder, "Path", addinAssembly.Location);
@@ -98,8 +106,8 @@ public class VaultExplorerExtension : IsolatedIExplorerExtension
 			var usedTargetAssemblyLoadContext = AssemblyLoadContext.GetLoadContext(usedTargetAssembly);
 			var usedTargetAssemblyLoadContextName = usedTargetAssemblyLoadContext?.Name ?? "<default>";
 #else
-			var usedTargetAppDomain = AppDomain.CurrentDomain;
-			var usedTargetAppDomainName = addinAppDomain?.FriendlyName ?? "<default>";
+         var usedTargetAppDomain = AppDomain.CurrentDomain;
+         var usedTargetAppDomainName = addinAppDomain?.FriendlyName ?? "<default>";
 #endif
 
 			stringBuilder.AppendLine($"****  Target '{targetAssemblyName}' Assembly Actually Used  ****");
@@ -132,18 +140,18 @@ public class VaultExplorerExtension : IsolatedIExplorerExtension
 				stringBuilder.AppendLine();
 			}
 #else
-			stringBuilder.AppendLine($"****  All Loaded '{targetAssemblyName}' Assemblies  ****");
-			var assemblies = AppDomain.CurrentDomain
-				 .GetAssemblies()
-				 .Where(assembly => string.Equals(assembly.GetName().Name, targetAssemblyName, StringComparison.Ordinal))
-				 .OrderBy(assembly => assembly.GetName().Version);
+         stringBuilder.AppendLine($"****  All Loaded '{targetAssemblyName}' Assemblies  ****");
+         var assemblies = AppDomain.CurrentDomain
+               .GetAssemblies()
+               .Where(assembly => string.Equals(assembly.GetName().Name, targetAssemblyName, StringComparison.Ordinal))
+               .OrderBy(assembly => assembly.GetName().Version);
 
-			foreach (var assembly in assemblies)
-			{
-				AppendKeyValuePair(stringBuilder, "Version", assembly.GetName().Version?.ToString());
-				AppendKeyValuePair(stringBuilder, "Path", assembly.Location);
-				stringBuilder.AppendLine();
-			}
+         foreach (var assembly in assemblies)
+         {
+               AppendKeyValuePair(stringBuilder, "Version", assembly.GetName().Version?.ToString());
+               AppendKeyValuePair(stringBuilder, "Path", assembly.Location);
+               stringBuilder.AppendLine();
+         }
 #endif
 
 			return stringBuilder.ToString();
@@ -158,4 +166,12 @@ Exception Stack Trace: {ex.StackTrace}";
 
 	private static void AppendKeyValuePair(System.Text.StringBuilder stringBuilder, string key, string? value)
 		 => stringBuilder.Append($"     {key}").Append(": ").AppendLine(value ?? "<n/a>");
+
+	/// <summary>
+	///	Gets Serilog version info with the type resolved inside the isolated context.
+	/// </summary>
+	public string GetSerilogVersionInfo()
+	{
+		return GetAssemblyVersionInfo(nameof(Serilog), typeof(Serilog.Log));
+	}
 }

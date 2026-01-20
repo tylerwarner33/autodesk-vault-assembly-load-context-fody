@@ -1,22 +1,21 @@
 using Autodesk.Connectivity.JobProcessor.Extensibility;
-using IsolatedVaultAddin.Isolation;
 
 namespace IsolatedVaultAddin;
 
 /// <remarks>
 ///	Assembly attributes (ApiVersion, ExtensionId) are generated via MSBuild in the .csproj file.
 /// </remarks>
-public class VaultJobProcessorExtension : IsolatedIJobHandler
+public class VaultJobProcessorExtension : IJobHandler
 {
-	public override bool OnCanProcess() => true;
+	public bool CanProcess(string jobType) => true;
 
-	public override JobOutcome OnExecute() => JobOutcome.Success;
+	public JobOutcome Execute(IJobProcessorServices context, IJob job) => JobOutcome.Success;
 
-	public override void JobProcessorStartup() { }
+	public void OnJobProcessorStartup(IJobProcessorServices context) { }
 
-	public override void JobProcessorShutdown() { }
+	public void OnJobProcessorShutdown(IJobProcessorServices context) { }
 
-	public override void JobProcessorWake() { }
+	public void OnJobProcessorWake(IJobProcessorServices context) { }
 
-	public override void JobProcessorSleep() { }
+	public void OnJobProcessorSleep(IJobProcessorServices context) { }
 }
