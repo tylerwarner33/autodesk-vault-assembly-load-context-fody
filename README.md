@@ -1,10 +1,10 @@
-# Isolated Vault Add-in Sample
+# Isolated Vault Add-in Sample Using `Isolator.Fody` NuGet Package
 
 ![Vault Versions](https://img.shields.io/badge/Vault-2023--2026-blue.svg)
 [![.NET Versions](https://img.shields.io/badge/.NET-4.8--8.0-blue.svg)](https://dotnet.microsoft.com/en-us/download/dotnet/6.0)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-A minimal Autodesk Vault add-in sample that demonstrates safe dependency isolation using the __[Isolator.Fody](https://github.com/ricaun-io/Isolator.Fody) Nuget Package__. Vault ships with specific assembly versions. Referencing newer (or different) versions in an add-in often causes binding conflicts. This sample allows the use of NuGet package/assembly versions that differ from the ones bundled with Vault by isolating the add-in’s dependencies in a custom load context.
+A minimal Autodesk Vault add-in sample that demonstrates safe dependency isolation using the __[Isolator.Fody](https://github.com/ricaun-io/Isolator.Fody) Nuget Package__. Vault ships with specific assembly versions. Referencing newer (or different) versions in an add-in often causes binding conflicts. This sample allows the use of NuGet package/assembly versions that differ from the ones bundled with Vault using the 'Isolator.Fody' NuGet package to automatically isolate the add-in’s dependencies in a separate container using `AssemblyLoadContext`.
 
 ![SerilogVersion](Images/Ribbon_SerilogVersion.png)
 ![Vault2026.1](Images/Dialog_Vault2026.1.png)
@@ -41,9 +41,9 @@ git clone https://github.com/tylerwarner33/autodesk-vault-assembly-load-context-
 
 ## Resources
 
-- TylerWarner.dev Blog Post: [Isolate Vault Add-In](https://tylerwarner.dev/how-to-use-assemblyloadcontext-for-isolating-inventor-addin-dependencies)
-- Isolator.Fody NuGet Package: [Isolator.Fody](https://github.com/ricaun-io/Isolator.Fody)
-- Isolator.Fody GitHub Repo: [Isolator.Fody](https://www.nuget.org/packages/Isolator.Fody)
+- TylerWarner.dev Blog Post: [Isolate Autodesk Add-Ins With the 'Isolator.Fody' NuGet Package](https://tylerwarner.dev/assemblyloadcontext-for-autodesk-addins-with-isolatorfody)
+- Isolator.Fody NuGet Package: [Isolator.Fody](https://www.nuget.org/packages/Isolator.Fody)
+- Isolator.Fody GitHub Repo: [Isolator.Fody](https://github.com/ricaun-io/Isolator.Fody)
 - Microsoft Learn: [System.Runtime.Loader.AssemblyLoadContext](https://learn.microsoft.com/en-us/dotnet/core/dependency-loading/understanding-assemblyloadcontext)
 - Microsoft GitHub: [AssemblyLoadContext](https://github.com/dotnet/coreclr/blob/v2.1.0/Documentation/design-docs/assemblyloadcontext.md)
 
